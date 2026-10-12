@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:login_rive_animation/screens/login_screen.dart';
 
-void main() {
+void main() { 
   runApp(const MainApp());
 }
 
