@@ -31,6 +31,60 @@ class _LoginScreenState extends State<LoginScreen> {
   final FocusNode _emailFocusNode = FocusNode();
   final FocusNode _passwordFocusNode = FocusNode();
 
+  //4.1 Controllers para maniputal el texto escrito por el usuario
+  final emailCtrl = TextEditingController();
+  final passCtrl = TextEditingController();
+
+  //4.2 Errores para mostrar en la UI
+  String? emailError;
+  String? passError;
+
+ // 4.3 Validadores
+  bool isValidEmail(String email) {
+    final re = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+    return re.hasMatch(email);
+  }
+
+  bool isValidPassword(String pass) {
+    // mínimo 8, una mayúscula, una minúscula, un dígito y un especial
+    final re = RegExp(
+      r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$',
+    );
+    return re.hasMatch(pass);
+  }
+
+  //4.4 Acción al botón
+  void _onLogin(){
+    //De lo que escribió el usuario, quita espacios en blanco
+    final email = emailCtrl.text.trim();
+    //john.doe@tecdesoftware.edu.mx
+    final pass = passCtrl.text;
+
+    final emailTypedError = isValidEmail(email) ? null : "Email Inválido";
+    final passwordTypedError = isValidPassword(pass) ? null : "Contraseña inválida";
+
+    //.4.5 Avisar que hubo un cambio
+    setState(() {
+      emailError = emailTypedError;
+      passError = passwordTypedError;
+    });
+
+    //4.6 Cerrar el teclado y bajar manos 
+    FocusScope.of(context).unfocus();
+    _typingDebounce?.cancel();
+    _isChecking?.change(false);
+    _isHandsUp?.change(false);
+    _numLook?.value = 50.0;
+
+    //4.7 Activar triggers
+    if(emailTypedError == null && passwordTypedError == null){
+      _trigSuccess?.fire();
+    } else{
+      _trigFail?.fire();
+    }
+  }
+  
+
   //2.2 Agregar listeners 
   @override
   void initState() {
@@ -96,6 +150,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 10),
                 //Email
                 TextField(
+                  //4.8 Vincular Controller
+                  controller: emailCtrl,
                   //2.3 Asignar el foco al campo de texto
                   focusNode: _emailFocusNode,
                   onChanged: (value){
@@ -120,6 +176,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
+                    //4.9 Mostrar el texto de error
+                    errorText: emailError,
                     hintText: "Email@ejemplo.com",
                     prefixIcon: const Icon(Icons.email),
                     border: OutlineInputBorder(
@@ -130,6 +188,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 10),
                 //Password
                 TextField(
+                  //4.8 Vincular Controller
+                  controller: passCtrl,
                   //2.3 Asignar el foco al campo de texto
                   focusNode: _passwordFocusNode,
                   onChanged: (value){
@@ -140,6 +200,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                   obscureText: _isObscure,
                   decoration: InputDecoration(
+                    errorText: passError,
                     hintText: "Password",
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton( icon: Icon(
@@ -156,6 +217,49 @@ class _LoginScreenState extends State<LoginScreen> {
                     )
                   ),
                 ),
+                SizedBox(height: 10),
+                SizedBox(
+                  width: size.width,
+                  child: const Text(
+                    "Fortgot password?",
+                    textAlign: TextAlign.right,
+                    style: TextStyle(decoration: TextDecoration.underline),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                MaterialButton(
+                  minWidth: size.width,
+                  height: 50,
+                  color: Colors.cyan,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  onPressed: _onLogin,
+                  child: Text("Login", style: TextStyle(color: Colors.white)),
+                  ),
+                  const SizedBox(
+                    height: 20
+                  ),
+                  SizedBox(
+                    width: size.width,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text("Don't have an account?"),
+                        TextButton(
+                          onPressed: () {},
+                          child: const Text(
+                            "Register",
+                            style: TextStyle(
+                              color: Colors.black,
+                              decoration: TextDecoration.underline,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ),
@@ -166,6 +270,10 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   //2.4 Liberar los recursos de los focusNode
   void dispose() {
+    //4.10 Liberar controllers
+    emailCtrl.dispose();
+    passCtrl.dispose();
+    //2.4 Liberar recursos de los focusNode
     _emailFocusNode.dispose();
     _passwordFocusNode.dispose();
     //3.5 Liberar Timer 
